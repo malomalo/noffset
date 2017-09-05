@@ -69,12 +69,14 @@ module Noffset
       if instance_variable_defined?(:@noffset) && @noffset
         @records = @records.dup
         
+        @records.reverse! if @noffset[:inverse]
+        
         if @records.length > @noffset[:limit]
           @records.pop
           @noffset[:surplus] = true
         end
 
-        @records.reverse! if @noffset[:inverse]
+
         @records.freeze
       end
       
