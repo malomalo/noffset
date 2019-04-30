@@ -8,9 +8,9 @@ module Noffset
       @noffset = if hash.nil?
         { terminal: nil, anchor: nil, surplus: false }
       elsif anchor = hash[:after] || hash['after']
-        { terminal: :after, anchor: anchor, surplus: false }
+        { terminal: :after, anchor: anchor.with_indifferent_access, surplus: false }
       elsif anchor = hash[:before] || hash['before']
-        { terminal: :before, anchor: anchor, surplus: false }
+        { terminal: :before, anchor: anchor.with_indifferent_access, surplus: false }
       else
         { terminal: nil, anchor: nil, surplus: false }
       end
