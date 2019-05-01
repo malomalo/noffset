@@ -8,9 +8,9 @@ module Noffset
       @noffset = if hash.nil?
         { terminal: nil, anchor: nil, surplus: false }
       elsif anchor = hash[:after] || hash['after']
-        { terminal: :after, anchor: anchor.with_indifferent_access, surplus: false }
+        { terminal: :after, anchor: anchor, surplus: false }
       elsif anchor = hash[:before] || hash['before']
-        { terminal: :before, anchor: anchor.with_indifferent_access, surplus: false }
+        { terminal: :before, anchor: anchor, surplus: false }
       else
         { terminal: nil, anchor: nil, surplus: false }
       end
@@ -100,20 +100,19 @@ module Noffset
         self.order_values.each do |order|
           if conditions.nil?
             conditions = if (@noffset[:terminal] == :after && order.ascending?) || (@noffset[:terminal] == :before && order.descending?)
-              Arel::Nodes::Grouping.new(table[order.expr.name].gt(@noffset[:anchor][order.expr.name]))
+              Arel::Nodes::Grouping.new(table[order.expr.name].gt(@noffset[:anchor][order.expr.name.to_s]))
             else
-              Arel::Nodes::Grouping.new(table[order.expr.name].lt(@noffset[:anchor][order.expr.name]))
+              Arel::Nodes::Grouping.new(table[order.expr.name].lt(@noffset[:anchor][order.expr.name.to_s]))
             end
-            columns_visited = table[order.expr.name].eq(@noffset[:anchor][order.expr.name])
+            columns_visited = table[order.expr.name].eq(@noffset[:anchor][order.expr.name.to_s])
           else
             conditions = if (@noffset[:terminal] == :after && order.ascending?) || (@noffset[:terminal] == :before && order.descending?)
-              conditions.or(Arel::Nodes::Grouping.new(columns_visited.and(table[order.expr.name].gt(@noffset[:anchor][order.expr.name]))))
+              conditions.or(Arel::Nodes::Grouping.new(columns_visited.and(table[order.expr.name].gt(@noffset[:anchor][order.expr.name.to_s]))))
             else
-              conditions.or(Arel::Nodes::Grouping.new(columns_visited.and(table[order.expr.name].lt(@noffset[:anchor][order.expr.name]))))
+              conditions.or(Arel::Nodes::Grouping.new(columns_visited.and(table[order.expr.name].lt(@noffset[:anchor][order.expr.name.to_s]))))
             end
-            columns_visited = columns_visited.and(table[order.expr.name].eq(@noffset[:anchor][order.expr.name]))
+            columns_visited = columns_visited.and(table[order.expr.name].eq(@noffset[:anchor][order.expr.name.to_s]))
           end
-          
         end
         
         if @noffset[:terminal] == :before
