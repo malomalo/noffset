@@ -2,8 +2,8 @@ PATH
   remote: .
   specs:
     noffset (1.0.0)
-      actionpack (~> 5.2)
-      activerecord (~> 5.2)
+      actionpack (>= 5.2)
+      activerecord (>= 5.2)
 
 GEM
   remote: https://rubygems.org/
@@ -89,16 +89,16 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
-  bundler (~> 1.11, >= 1.11.2)
+  bundler
   byebug
   faker
   minitest
   minitest-reporters
   noffset!
   pg
-  railties (>= 5.0.0)
+  railties (>= 5.2)
   rake
   simplecov
 
 BUNDLED WITH
-   1.17.1
+   1.17.3
