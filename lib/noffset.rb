@@ -11,6 +11,8 @@ module Noffset
         { terminal: :after, anchor: anchor, surplus: false }
       elsif anchor = hash[:before] || hash['before']
         { terminal: :before, anchor: anchor, surplus: false }
+      elsif hash[:last] || hash['last']
+        { terminal: :last, anchor: nil, surplus: false}
       else
         { terminal: nil, anchor: nil, surplus: false }
       end
@@ -19,12 +21,23 @@ module Noffset
     end
     
     def next_page?
-      if @noffset[:terminal] == :before
+      case @noffset[:terminal]
+      when :before
         true
+      when :last
+        false
       else
         load
         @noffset[:surplus]
       end
+    end
+    
+    def last_page?
+      !next_page?
+    end
+    
+    def last_params
+      {last: true}
     end
     
     def next_params
@@ -52,6 +65,14 @@ module Noffset
         before: @noffset[:order].map { |k, d| [k, @records.first.send(k)] }.to_h,
         order: @noffset[:order]
       }
+    end
+    
+    def first_page?
+      !prev_page?
+    end
+    
+    def first_params
+      {}
     end
 
     def to_sql
@@ -94,7 +115,6 @@ module Noffset
       self.limit_value = @noffset[:limit] + 1
 
       if @noffset[:anchor]
-        
         conditions = nil
         columns_visited = nil
         self.order_values.each do |order|
@@ -121,6 +141,9 @@ module Noffset
         end
 
         where!(conditions)
+      elsif @noffset[:terminal] == :last
+        @noffset[:inverse] = true
+        order_values.map!(&:reverse)
       end
       
     end
@@ -136,8 +159,7 @@ module Noffset
     
     def next_page_path(scope)
       if scope.next_page?
-        params = request.query_parameters.dup
-        params.delete(:before)
+        params = request.query_parameters.except(:before, :after, :last)
         request.path + '?' + params.merge(scope.next_params).to_param
       end
     end
@@ -149,10 +171,23 @@ module Noffset
       end
     end
     
+    def last_page_path(scope)
+      if scope.next_page?
+        params = request.query_parameters.except(:before, :after, :last)
+        request.path + '?' + params.merge(scope.last_params).to_param
+      end
+    end
+    alias :last_page :last_page_path
+    
+    def last_page_url(scope)
+      if scope.next_page?
+        request.base_url + last_page_path(scope)
+      end
+    end
+    
     def previous_page_path(scope)
       if scope.prev_page?
-        params = request.query_parameters.dup
-        params.delete(:after)
+        params = request.query_parameters.except(:before, :after, :last)
         request.path + '?' + params.merge(scope.prev_params).to_param
       end
     end
@@ -167,11 +202,26 @@ module Noffset
     end
     alias :prev_page_url :previous_page_url
     
+    def first_page_path(scope)
+      if scope.prev_page?
+        params = request.query_parameters.except(:before, :after, :last)
+        request.path + '?' + params.merge(scope.first_params).to_param
+      end
+    end
+    alias :first_page :first_page_path
+    
+    def first_page_url(scope)
+      if scope.prev_page?
+        request.base_url + first_page_path(scope)
+      end
+    end
   end
 end
 
 
 ::ActionController::Base.send :include, Noffset::Helpers
-::ActionController::Base.helper_method :next_page_path, :next_page, :next_page_url
-::ActionController::Base.helper_method :prev_page_path, :prev_page, :prev_page_url
+::ActionController::Base.helper_method :next_page_path,     :next_page,     :next_page_url
+::ActionController::Base.helper_method :last_page_path,     :last_page,     :last_page_url
+::ActionController::Base.helper_method :prev_page_path,     :prev_page,     :prev_page_url
 ::ActionController::Base.helper_method :previous_page_path, :previous_page, :previous_page_url
+::ActionController::Base.helper_method :first_page_path,    :first_page,    :first_page_url

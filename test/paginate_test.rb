@@ -50,6 +50,55 @@ class PaginateTest < ActiveSupport::TestCase
     assert_equal true, bots.next_page?
   end
 
+  test '#next_page? with .paginate(last: true)' do
+    ids = 10.times.map { DingBot.create! }.map(&:id).sort
+
+    bots = DingBot.order(id: :asc).limit(2).paginate(last: true)
+    assert_equal false, bots.next_page?
+  end
+
+  test '#last_page? with .paginate' do
+    bots = DingBot.order(id: :asc).limit(2).paginate
+    assert_equal true, bots.last_page?
+
+    10.times.map { DingBot.create! }.map(&:id).sort
+
+    assert_equal false, bots.reload.last_page?
+  end
+
+  test '#last_page? with .paginate(after: )' do
+    ids = 10.times.map { DingBot.create! }.map(&:id).sort
+
+    bots = DingBot.order(id: :asc).limit(2).paginate
+    assert_equal false, bots.last_page?
+
+    bots = DingBot.order(id: :asc).limit(2).paginate(after: {id: ids[3]})
+    assert_equal false, bots.last_page?
+
+    bots = DingBot.order(id: :asc).limit(2).paginate(after: {id: ids[7]})
+    assert_equal true, bots.last_page?
+  end
+
+  test '#last_page? with .paginate(before: )' do
+    ids = 10.times.map { DingBot.create! }.map(&:id).sort
+
+    bots = DingBot.order(id: :asc).limit(2).paginate(before: {id: ids[8]})
+    assert_equal false, bots.last_page?
+
+    bots = DingBot.order(id: :asc).limit(2).paginate(before: {id: ids[5]})
+    assert_equal false, bots.last_page?
+
+    bots = DingBot.order(id: :asc).limit(2).paginate(before: {id: ids[2]})
+    assert_equal false, bots.last_page?
+  end
+
+  test '#last_page? with .paginate(last: true)' do
+    ids = 10.times.map { DingBot.create! }.map(&:id).sort
+
+    bots = DingBot.order(id: :asc).limit(2).paginate(last: true)
+    assert_equal true, bots.last_page?
+  end
+
   test '#prev_page? with .paginate' do
     bots = DingBot.order(id: :asc).limit(2).paginate
     assert_equal false, bots.prev_page?
@@ -84,6 +133,13 @@ class PaginateTest < ActiveSupport::TestCase
     bots = DingBot.order(id: :asc).limit(2).paginate(before: {id: ids[2]})
     assert_equal false, bots.prev_page?
   end
+  
+  test '#prev_page? with .paginate(last: true)' do
+    ids = 10.times.map { DingBot.create! }.map(&:id).sort
+
+    bots = DingBot.order(id: :asc).limit(2).paginate(last: true)
+    assert_equal true, bots.prev_page?
+  end
 
   test "paginating forward through all records" do
     ids = 10.times.map { DingBot.create! }.map(&:id).sort
@@ -99,6 +155,7 @@ class PaginateTest < ActiveSupport::TestCase
     assert ids.empty?
     assert bots.prev_page?
     assert !bots.next_page?
+    assert bots.last_page?
   end
 
   test "paginating backward through all records" do
@@ -115,8 +172,27 @@ class PaginateTest < ActiveSupport::TestCase
     assert ids.empty?
     assert !bots.prev_page?
     assert bots.next_page?
+    assert !bots.last_page?
   end
 
+  test "paginating backward through all records starting at the last page" do
+    ids = 10.times.map { DingBot.create! }.map(&:id).sort
+    bots = DingBot.order(id: :asc).limit(2)
+    
+    bots = DingBot.order(id: :asc).limit(2).paginate(bots.last_params)
+    while bots.prev_page?
+      bots.reverse.each { |bot| ids.pop if ids.last == bot.id }
+      bots = DingBot.order(id: :asc).limit(2).paginate(bots.prev_params)
+    end
+    bots.reverse.each { |bot| ids.pop if ids.last == bot.id }
+    bots = DingBot.order(id: :asc).limit(2).paginate(bots.prev_params)
+
+    assert ids.empty?
+    assert !bots.prev_page?
+    assert bots.next_page?
+    assert !bots.last_page?
+  end
+  
   test "::paginate(after: {id: N}, order: {id: :desc})" do
     ids = 10.times.map { DingBot.create! }.map(&:id).sort.reverse
 
@@ -193,8 +269,6 @@ class PaginateTest < ActiveSupport::TestCase
     assert_equal({after: {id: ids[3]}, order: {id: :asc}}, bots.next_params)
   end
 
-
-
   test "::paginate(after: {id: N}, order: {created_at: :asc, id: :desc})" do
     data = 10.times.map { DingBot.create! }.sort_by(&:id).reverse.sort_by(&:created_at)
 
@@ -232,8 +306,6 @@ class PaginateTest < ActiveSupport::TestCase
     assert_equal({before: {created_at: data[2].created_at, id: data[2].id}, order: {created_at: :asc, id: :desc}}, bots.prev_params)
     assert_equal({after: {created_at: data[3].created_at, id: data[3].id}, order: {created_at: :asc, id: :desc}}, bots.next_params)
   end
-
-
 
   test "::paginate(after: {id: N}, order: {created_at: :desc, id: :asc})" do
     data = 10.times.map { DingBot.create! }.sort_by(&:id).sort_by(&:created_at).reverse

@@ -2,8 +2,8 @@ PATH
   remote: .
   specs:
     noffset (1.0.0)
-      actionpack (>= 5.2)
-      activerecord (>= 5.2)
+      actionpack (>= 7.0)
+      activerecord (>= 7.0)
 
 GEM
   remote: https://rubygems.org/
