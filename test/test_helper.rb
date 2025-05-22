@@ -40,7 +40,7 @@ class ActiveSupport::TestCase
     if !self.class.class_variable_defined?(:@@suite_setup_run) && self.class.class_variable_defined?(:@@schema)
       ActiveRecord::Base.establish_connection({
         adapter:  "postgresql",
-        database: "activerecord-filter-test",
+        database: "noffset-test",
         encoding: "utf8"
       })
     
