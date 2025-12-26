@@ -7,7 +7,6 @@ $LOAD_PATH << File.expand_path('../lib', __FILE__)
 
 require 'byebug'
 require "minitest/autorun"
-require 'minitest/unit'
 require 'minitest/reporters'
 require 'noffset'
 
